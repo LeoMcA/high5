@@ -1,0 +1,11 @@
+{
+	"name": "high5",
+	"version": "0.0.1",
+	"private": true,
+	"dependencies": {
+			"express": "2.4.7",
+			"jade": ">= 0.0.1",
+			"socket.io": ">= 0.8.4",
+			"irc": ">= 0.2.1"
+	}
+}
