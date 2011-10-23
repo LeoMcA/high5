@@ -1,15 +1,14 @@
 $(document).ready(function() {
-	jwerty.key('↑,↑,↓,↓,←,→,←,→,B,A,↩', function(){alert("yaaaaaaaaaaay!");});
-	jwerty.key("Alt+1/Alt+2/Alt+3/Alt+4/Alt+5/Alt+6/Alt+7/Alt+8/Alt+9/Alt+0/Alt+q/Alt+w/Alt+e/Alt+r/Alt+t/Alt+y/Alt+u/Alt+i/Alt+o/Alt+p/Alt+a/Alt+s/Alt+d/Alt+f/Alt+g/Alt+h/Alt+j/Alt+k/Alt+l/Alt+z/Alt+x/Alt+c/Alt+v/Alt+b/Alt+n/Alt+m", function(foo, keypressed){
-		changeChan(keypressed.replace("alt+", ""));
-		return false;
-	});
-	chanlist = [];
-	qwerty = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"];
+
+	// ---------- socket.io stuff ----------
+
 	var socket = io.connect("http://localhost:3000/");
+
+	// ---------- messages from irc bouncer ----------
+
 	irc = new Object();
 
-	socket.on("irc", function(data){
+	socket.on("ircServerMsg", function(data){
 		console.log(data);
 		if(data.type === "registered") irc.registered();
 		if(data.type === "motd") irc.motd(data);
@@ -25,12 +24,93 @@ $(document).ready(function() {
 		if(data.type === "invite") irc.invite(data);
 		if(data.type === "whois") irc.whois(data);
 	});
+
+	irc.registered = function(){
+	}
+	irc.motd = function(data){
+		createPre("server.messages");
+		$("pre.server.messages").append(data.motd+"<br>");
+	}
+	irc.names = function(data){
+	}
+	irc.topic = function(data){
+	}
+	irc.join = function(data){
+		createPre("server.channel."+data.channel.replace("#", "")+".messages");
+		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("--&#62; "+data.nick+" joined "+data.channel+"<br>");
+	}
+	irc.part = function(data){
+		createPre("server.channel."+data.channel.replace("#", "")+".messages");
+		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" left "+data.channel+" ("+data.reason+")<br>");
+	}
+	irc.quit = function(data){
+		$("pre.messages").append("&#60;-- "+data.nick+" left IRC ("+data.reason+")<br>");
+	}
+	irc.kick = function(data){
+		createPre("server.channel."+data.channel.replace("#", "")+".messages");
+		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" was kicked by "+data.by+" from "+data.channel+" ("+data.reason+")<br>");
+	}
+	irc.message = function(data){
+		createPre("server.channel."+data.to.replace("#", "")+".messages");
+		if(data.text.search(/^\x01ACTION/) > -1){
+			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("*"+data.nick+data.text.replace("\x01ACTION", "").replace("\x01", "")+"<br>");
+		} else {
+			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
+		}
+	}
+
+	// ---------- messages to irc bouncer ----------
+
+	$("form.send").submit(function(){
+		console.log("chan:"+location.pathname.split("/")[1]+", msg:"+$("input:first").val());
+		socket.emit("ircClientMsg", {
+			"chan": location.pathname.split("/")[1],
+			"msg": $("input:first").val()
+		});
+		$("input:first").val("")
+		return false;
+	});
+
+	// ---------- chanlist stuff ----------
+
+	chanlist = [];
+
+	socket.on("chanlist", function(chanlistFromServer){
+		chanlist = chanlistFromServer;
+		$("pre.chanlist").replaceWith("<pre class='chanlist'></pre>");
+		$.each(chanlist, function(index, value){
+			$("pre.chanlist").append(convertToBind(index)+" | "+value+"<br>");
+		});
+	});
+
+	// changing the channel
+
+	jwerty.key("Alt+1/Alt+2/Alt+3/Alt+4/Alt+5/Alt+6/Alt+7/Alt+8/Alt+9/Alt+0/Alt+q/Alt+w/Alt+e/Alt+r/Alt+t/Alt+y/Alt+u/Alt+i/Alt+o/Alt+p/Alt+a/Alt+s/Alt+d/Alt+f/Alt+g/Alt+h/Alt+j/Alt+k/Alt+l/Alt+z/Alt+x/Alt+c/Alt+v/Alt+b/Alt+n/Alt+m", function(foo, keypressed){
+		changeChan(keypressed.replace("alt+", ""));
+		return false;
+	});
 	
+	function changeChan(keypressed){
+		if(keypressed == "1"){
+			history.replaceState(false, false, "/");
+			$("pre.server").hide();
+			$("pre.server.messages").show();
+		} else {
+			history.replaceState(false, false, chanlist[convertToChan(keypressed)].replace("#", ""));
+			$("pre.server").hide();
+			$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "")+".messages").show();
+		}
+	}
+
+	// ---------- assorted code ----------
+
+	qwerty = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"];
+
 	function createPre(classes){
 		if($("pre."+classes).length === 0){
 			$("body").append("<pre class='"+classes.replace(/\./g, " ")+"'>");
 			$("pre.server").hide();
-			$("pre.server.channel."+location.pathname.split("/")[2]+".messages").show();
+			$("pre.server.channel."+location.pathname.split("/")[1]+".messages").show();
 		}
 	}
 	
@@ -55,72 +135,7 @@ $(document).ready(function() {
 			return $.inArray(keypressed, qwerty)+10;
 		}
 	}
-	
-	function changeChan(keypressed){
-		history.replaceState(false, false, chanlist[convertToChan(keypressed)].replace("#", ""));
-		$("pre.server").hide();
-		$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "")+".messages").show();
-	}
-	
-	socket.on("chanlist", function(chanlistFromServer){
-		chanlist = chanlistFromServer;
-		$("pre.chanlist").replaceWith("<pre class='chanlist'></pre>");
-		$.each(chanlist, function(index, value){
-			$("pre.chanlist").append(convertToBind(index)+" | "+value+"<br>");
-		});
-	});
 
-	irc.registered = function(){
-	};
+	jwerty.key('↑,↑,↓,↓,←,→,←,→,B,A,↩', function(){alert("yaaaaaaaaaaay!");});
 
-	irc.motd = function(data){
-		createPre("server.messages");
-		$("pre.server.messages").append(data.motd+"<br>");
-	};
-
-	irc.names = function(data){
-
-	};
-
-	irc.topic = function(data){
-
-	};
-
-	irc.join = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("--&#62; "+data.nick+" joined "+data.channel+"<br>");
-	};
-
-	irc.part = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" left "+data.channel+" ("+data.reason+")<br>");
-	};
-
-	irc.quit = function(data){
-		$("pre.messages").append("&#60;-- "+data.nick+" left IRC ("+data.reason+")<br>");
-	};
-
-	irc.kick = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" was kicked by "+data.by+" from "+data.channel+" ("+data.reason+")<br>");
-	};
-
-	irc.message = function(data){
-		createPre("server.channel."+data.to.replace("#", "")+".messages");
-		if(data.text.search(/^\x01ACTION/) > -1){
-			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("*"+data.nick+data.text.replace("\x01ACTION", "").replace("\x01", "")+"<br>");
-		} else {
-			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
-		}
-	};
-
-	$("form.send").submit(function(){
-		console.log("chan:"+location.pathname.split("/")[2]+", msg:"+$("input:first").val());
-		socket.emit("irc-msg", {
-			"chan": location.pathname.split("/")[2],
-			"msg": $("input:first").val()
-		});
-		$("input:first").val("")
-		return false;
-	});
 });
