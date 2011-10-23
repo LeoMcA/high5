@@ -92,6 +92,19 @@ function findInArray(array, str){
 	return position;
 }
 
+function modUserlist(action, nick, channel){
+	/*if(nick != "leo|high5"){
+		if(action == "join"){
+			chanlist.push(channel);
+		} if(action == "part" || action == "kick"){
+			chanlist.splice(findInArray(chanlist, channel), 1);
+		} if(action == "quit"){
+			chanlist = [];
+		}
+		io.sockets.emit("chanlist", chanlist);
+	}*/
+}
+
 function modChanlist(action, nick, channel){
 	if(nick == "leo|high5"){
 		if(action == "motd"){
@@ -151,6 +164,7 @@ client.addListener("topic", function(channel, topic, nick) {
 	});
 });
 client.addListener("join", function(channel, nick) {
+	modUserlist("join", nick, channel);
 	modChanlist("join", nick, channel);
 	ioSend({
 		"type": "join",
@@ -159,6 +173,7 @@ client.addListener("join", function(channel, nick) {
 	});
 });
 client.addListener("part", function(channel, nick, reason) {
+	modUserlist("part", nick, channel);
 	modChanlist("part", nick, channel);
 	ioSend({
 		"type": "part",
@@ -168,6 +183,7 @@ client.addListener("part", function(channel, nick, reason) {
 	});
 });
 client.addListener("quit", function(nick, reason, channels) {
+	modUserlist("quit", nick);
 	modChanlist("quit", nick);
 	ioSend({
 		"type": "quit",
@@ -177,6 +193,7 @@ client.addListener("quit", function(nick, reason, channels) {
 	});
 });
 client.addListener("kick", function(channel, nick, by, reason) {
+	modUserlist("kick", nick, channel);
 	modChanlist("kick", nick, channel);
 	ioSend({
 		"type": "kick",
