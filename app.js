@@ -2,6 +2,7 @@ var express = require("express");
 var app = module.exports = express.createServer();
 var irc = require("irc");
 var io = require("socket.io").listen(app);
+chanlist = [];
 
 // Configuration
 app.configure(function() {
@@ -41,19 +42,44 @@ app.listen(process.env.C9_PORT);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 
 // WebSockets stuff
-/* io.sockets.on("connection", function() {
-	client.connect();
+io.sockets.on("connection", function() {
+	//client.connect();
+	io.sockets.emit("chanlist", chanlist);
 });
 
 io.sockets.on("disconnect", function() {
-	client.disconnect();
-}); */
+	//client.disconnect();
+});
 
 function ioSend(data) {
 	io.sockets.emit("irc", data);
 }
 
 // IRC stuff
+function findInArray(array, str){
+	position = array.forEach(function(value, index){
+		if(value === str){
+			return index;
+		} else {
+			return false;
+		}
+	});
+	return position;
+}
+
+function modChanlist(action, nick, channel){
+	if(nick == "leo|high5"){
+		if(action == "motd"){
+		} if(action == "join"){
+			chanlist.push(channel);
+		} if(action == "part" || action == "kick"){
+			chanlist.splice(findInArray(chanlist, channel), 1);
+		} if(action == "quit"){
+			chanlist = [];
+		}
+		io.sockets.emit("chanlist", chanlist);
+	}
+}
 var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 	userName: "high5",
 	realName: "high5 IRC client",
@@ -62,7 +88,7 @@ var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 	showErrors: false,
 	autoRejoin: true,
 	autoConnect: true,
-	channels: ["#high5","#lizardlounge"],
+	channels: ["#high5", "#high52"],
 	secure: false,
 	selfSigned: false,
 	floodProtection: false
@@ -95,6 +121,7 @@ client.addListener("topic", function(channel, topic, nick) {
 	});
 });
 client.addListener("join", function(channel, nick) {
+	modChanlist("join", nick, channel);
 	ioSend({
 		"type": "join",
 		"channel": channel,
@@ -102,6 +129,7 @@ client.addListener("join", function(channel, nick) {
 	});
 });
 client.addListener("part", function(channel, nick, reason) {
+	modChanlist("part", nick, channel);
 	ioSend({
 		"type": "part",
 		"channel": channel,
@@ -110,6 +138,7 @@ client.addListener("part", function(channel, nick, reason) {
 	});
 });
 client.addListener("quit", function(nick, reason, channels) {
+	modChanlist("quit", nick);
 	ioSend({
 		"type": "quit",
 		"nick": nick,
@@ -118,6 +147,7 @@ client.addListener("quit", function(nick, reason, channels) {
 	});
 });
 client.addListener("kick", function(channel, nick, by, reason) {
+	modChanlist("kick", nick, channel);
 	ioSend({
 		"type": "kick",
 		"channel": channel,

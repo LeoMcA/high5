@@ -29,17 +29,6 @@ $(document).ready(function() {
 		}
 	}
 	
-	function findInArray(array, str){
-		position = $.each(array, function(index, value){
-			if(value === str){
-				return index;
-			} else {
-				return false;
-			}
-		});
-		return position;
-	}
-	
 	function convertToBind(index){
 		if(index < 9){
 			return index+1;
@@ -52,23 +41,14 @@ $(document).ready(function() {
 		}
 	}
 	
-	function modChanlist(action, data){
-		if(data.nick === "leo|high5"){
-			if(action === "join"){
-				chanlist.push(data.channel);
-			}
-			if(action === "part" || "kick"){
-				chanlist.splice(findInArray(chanlist, data.channel), 1);
-			}
-			if(action === "quit"){
-				chanlist = [];
-			}
-		}
-		$("pre.chanlist").replace();
+	socket.on("chanlist", function(chanlist){
+		console.log(chanlist);
+		$("pre.chanlist").replaceWith("<pre class='chanlist'></pre>");
 		$.each(chanlist, function(index, value){
+			console.log(index, convertToBind(index), value);
 			$("pre.chanlist").append(convertToBind(index)+" | "+value+"<br>");
 		});
-	}
+	});
 
 	irc.registered = function(){
 	};
@@ -89,24 +69,20 @@ $(document).ready(function() {
 	irc.join = function(data){
 		createPre("server.channel."+data.channel.replace("#", "")+".messages");
 		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("--&#62; "+data.nick+" joined "+data.channel+"<br>");
-		modChanlist("join", data);
 	};
 
 	irc.part = function(data){
 		createPre("server.channel."+data.channel.replace("#", "")+".messages");
 		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" left "+data.channel+" ("+data.reason+")<br>");
-		modChanlist("part", data);
 	};
 
 	irc.quit = function(data){
 		$("pre.messages").append("&#60;-- "+data.nick+" left IRC ("+data.reason+")<br>");
-		modChanlist("quit");
 	};
 
 	irc.kick = function(data){
 		createPre("server.channel."+data.channel.replace("#", "")+".messages");
 		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" was kicked by "+data.by+" from "+data.channel+" ("+data.reason+")<br>");
-		modChanlist("kick", data);
 	};
 
 	irc.message = function(data){
