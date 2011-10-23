@@ -6,7 +6,7 @@ $(document).ready(function() {
 	});
 	chanlist = [];
 	qwerty = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"];
-	var socket = io.connect("http://high5.leomca.c9.io/");
+	var socket = io.connect("http://localhost:3000/");
 	irc = new Object();
 
 	socket.on("irc", function(data){
@@ -107,8 +107,20 @@ $(document).ready(function() {
 
 	irc.message = function(data){
 		createPre("server.channel."+data.to.replace("#", "")+".messages");
-		$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
+		if(data.text.search(/^\x01ACTION/) > -1){
+			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("*"+data.nick+data.text.replace("\x01ACTION", "").replace("\x01", "")+"<br>");
+		} else {
+			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
+		}
 	};
 
-
+	$("form.send").submit(function(){
+		console.log("chan:"+location.pathname.split("/")[2]+", msg:"+$("input:first").val());
+		socket.emit("irc-msg", {
+			"chan": location.pathname.split("/")[2],
+			"msg": $("input:first").val()
+		});
+		$("input:first").val("")
+		return false;
+	});
 });

@@ -38,13 +38,38 @@ app.get("/server/:channel", function(req, res) {
 	});
 });
 
-app.listen(process.env.C9_PORT);
+app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 
 // WebSockets stuff
-io.sockets.on("connection", function() {
+io.sockets.on("connection", function(socket){
 	//client.connect();
 	io.sockets.emit("chanlist", chanlist);
+	socket.on("irc-msg", function(data){
+		if(data.msg.search(/^\/me/) > -1){
+			ioSend({
+				"type": "message",
+				"nick": "leo|high5",
+				"to": "#"+data.chan,
+				"text": convertToEntity(data.msg).replace("/me", "\u0001ACTION").replace(/$/, "\u0001")
+			});
+			client.say("#"+data.chan, data.msg.replace("/me", "\u0001ACTION").replace(/$/, "\u0001"));
+		} else if(data.msg.search(/^\/join/) > -1){
+			client.join(data.msg.replace("/join ", ""));
+		} else if(data.msg.search(/^\/part/) > -1){
+			client.part(data.msg.replace("/part ", ""));
+		} else if(data.msg.search(/^\/quit/) > -1){
+			client.disconnect(data.msg.replace("/quit ", ""));
+		} else {
+			ioSend({
+				"type": "message",
+				"nick": "leo|high5",
+				"to": "#"+data.chan,
+				"text": convertToEntity(data.msg)
+			});
+			client.say("#"+data.chan, data.msg);
+		}
+	});
 });
 
 io.sockets.on("disconnect", function() {
@@ -80,6 +105,11 @@ function modChanlist(action, nick, channel){
 		io.sockets.emit("chanlist", chanlist);
 	}
 }
+
+function convertToEntity(str){
+	return str.replace(/\&/g, "&#38;").replace(/\"/g, "&#34;").replace(/\'/g, "&#39;").replace(/\</g, "&#60;").replace(/\>/g, "&#62;");
+}
+
 var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 	userName: "high5",
 	realName: "high5 IRC client",
@@ -88,7 +118,7 @@ var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 	showErrors: false,
 	autoRejoin: true,
 	autoConnect: true,
-	channels: ["#high5", "#high52"],
+	channels: ["#high5"],
 	secure: false,
 	selfSigned: false,
 	floodProtection: false
@@ -102,7 +132,7 @@ client.addListener("registered", function() {
 client.addListener("motd", function(motd) {
 	ioSend({
 		"type": "motd",
-		"motd": motd
+		"motd": convertToEntity(motd)
 	});
 });
 client.addListener("names", function(channel, nicks) {
@@ -116,7 +146,7 @@ client.addListener("topic", function(channel, topic, nick) {
 	ioSend({
 		"type": "topic",
 		"channel": channel,
-		"topic": topic,
+		"topic": convertToEntity(topic),
 		"nick": nick
 	});
 });
@@ -134,7 +164,7 @@ client.addListener("part", function(channel, nick, reason) {
 		"type": "part",
 		"channel": channel,
 		"nick": nick,
-		"reason": reason
+		"reason": convertToEntity(reason)
 	});
 });
 client.addListener("quit", function(nick, reason, channels) {
@@ -142,7 +172,7 @@ client.addListener("quit", function(nick, reason, channels) {
 	ioSend({
 		"type": "quit",
 		"nick": nick,
-		"reason": reason,
+		"reason": convertToEntity(reason),
 		"channels": channels
 	});
 });
@@ -153,7 +183,7 @@ client.addListener("kick", function(channel, nick, by, reason) {
 		"channel": channel,
 		"nick": nick,
 		"by": by,
-		"reason": reason
+		"reason": convertToEntity(reason)
 	});
 });
 client.addListener("message", function(nick, to, text) {
@@ -161,7 +191,7 @@ client.addListener("message", function(nick, to, text) {
 		"type": "message",
 		"nick": nick,
 		"to": to,
-		"text": text
+		"text": convertToEntity(text)
 	});
 });
 client.addListener("notice", function(nick, to, text) {
@@ -169,7 +199,7 @@ client.addListener("notice", function(nick, to, text) {
 		"type": "notice",
 		"nick": nick,
 		"to": to,
-		"text": text
+		"text": convertToEntity(text)
 	});
 });
 client.addListener("nick", function(oldnick, newnick, channels) {
