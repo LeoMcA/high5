@@ -1,4 +1,9 @@
 $(document).ready(function() {
+	jwerty.key('↑,↑,↓,↓,←,→,←,→,B,A,↩', function(){alert("yaaaaaaaaaaay!");});
+	jwerty.key("Alt+1/Alt+2/Alt+3/Alt+4/Alt+5/Alt+6/Alt+7/Alt+8/Alt+9/Alt+0/Alt+q/Alt+w/Alt+e/Alt+r/Alt+t/Alt+y/Alt+u/Alt+i/Alt+o/Alt+p/Alt+a/Alt+s/Alt+d/Alt+f/Alt+g/Alt+h/Alt+j/Alt+k/Alt+l/Alt+z/Alt+x/Alt+c/Alt+v/Alt+b/Alt+n/Alt+m", function(foo, keypressed){
+		changeChan(keypressed.replace("alt+", ""));
+		return false;
+	});
 	chanlist = [];
 	qwerty = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"];
 	var socket = io.connect("http://high5.leomca.c9.io/");
@@ -41,11 +46,26 @@ $(document).ready(function() {
 		}
 	}
 	
-	socket.on("chanlist", function(chanlist){
-		console.log(chanlist);
+	function convertToChan(keypressed){
+		if(keypressed == "0"){
+			return 9;
+		} else if(keypressed < 10){
+			return keypressed-1;
+		} else {
+			return $.inArray(keypressed, qwerty)+10;
+		}
+	}
+	
+	function changeChan(keypressed){
+		history.replaceState(false, false, chanlist[convertToChan(keypressed)].replace("#", ""));
+		$("pre.server").hide();
+		$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "")+".messages").show();
+	}
+	
+	socket.on("chanlist", function(chanlistFromServer){
+		chanlist = chanlistFromServer;
 		$("pre.chanlist").replaceWith("<pre class='chanlist'></pre>");
 		$.each(chanlist, function(index, value){
-			console.log(index, convertToBind(index), value);
 			$("pre.chanlist").append(convertToBind(index)+" | "+value+"<br>");
 		});
 	});
@@ -89,4 +109,6 @@ $(document).ready(function() {
 		createPre("server.channel."+data.to.replace("#", "")+".messages");
 		$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
 	};
+
+
 });
