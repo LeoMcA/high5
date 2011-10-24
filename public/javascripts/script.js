@@ -13,60 +13,18 @@ $(document).ready(function() {
 		});
 
 	socket.on("ircServerMsg", function(data){
-		console.log(data);
-		if(data.type === "registered") irc.registered();
-		if(data.type === "motd") irc.motd(data);
-		if(data.type === "names") irc.names(data);
-		if(data.type === "topic") irc.topic(data);
-		if(data.type === "join") irc.join(data);
-		if(data.type === "part") irc.part(data);
-		if(data.type === "quit") irc.quit(data);
-		if(data.type === "kick") irc.kick(data);
-		if(data.type === "message") irc.message(data);
-		if(data.type === "notice") irc.notice(data);
-		if(data.type === "nick") irc.nick(data);
-		if(data.type === "invite") irc.invite(data);
-		if(data.type === "whois") irc.whois(data);
-	});
-
-	irc.registered = function(){
-	}
-	irc.motd = function(data){
-		createPre("server.messages");
-		$("pre.server.messages").append(data.motd+"<br>");
-	}
-	irc.names = function(data){
-	}
-	irc.topic = function(data){
-	}
-	irc.join = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("--&#62; "+data.nick+" joined "+data.channel+"<br>");
-	}
-	irc.part = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" left "+data.channel+" ("+data.reason+")<br>");
-	}
-	irc.quit = function(data){
-		$("pre.messages").append("&#60;-- "+data.nick+" left IRC ("+data.reason+")<br>");
-	}
-	irc.kick = function(data){
-		createPre("server.channel."+data.channel.replace("#", "")+".messages");
-		$("pre.server.channel."+data.channel.replace("#", "")+".messages").append("&#60;-- "+data.nick+" was kicked by "+data.by+" from "+data.channel+" ("+data.reason+")<br>");
-	}
-	irc.message = function(data){
-		createPre("server.channel."+data.to.replace("#", "")+".messages");
-		if(data.text.search(/^\x01ACTION/) > -1){
-			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("*"+data.nick+data.text.replace("\x01ACTION", "").replace("\x01", "")+"<br>");
+		if(data.to == "server"){
+			createPre("server.messages");
+			$("pre.server.messages").append(data.msg);
 		} else {
-			$("pre.server.channel."+data.to.replace("#", "")+".messages").append("&#60;"+data.nick+"&#62; "+data.text+"<br>");
+			createPre("server.channel."+data.to.replace("#", "")+".messages");
+			$("pre.server.channel."+data.to.replace("#", "")+".messages").append(data.msg);
 		}
-	}
+	});
 
 	// ---------- messages to irc bouncer ----------
 
 	$("form.send").submit(function(){
-		console.log("chan:"+location.pathname.split("/")[1]+", msg:"+$("input:first").val());
 		socket.emit("ircClientMsg", {
 			"chan": location.pathname.split("/")[1],
 			"msg": $("input:first").val()
