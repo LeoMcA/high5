@@ -42,6 +42,10 @@ console.log("Express server listening on port %d in %s mode", app.address().port
 
 var io = require("socket.io").listen(app);
 
+// ---------- redis stuff ----------
+
+var redis = require('redis').createClient();
+
 // ---------- irc stuff ----------
 
 var irc = require("irc");
@@ -50,7 +54,7 @@ var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 	realName: "high5 IRC client",
 	port: 6667,
 	debug: false,
-	showErrors: false,
+	showErrors: true,
 	autoRejoin: true,
 	autoConnect: true,
 	channels: ["#high5"],
@@ -73,7 +77,7 @@ function decideOnIrcClientMessageType(data){
 	if(data.msg.search(/^\/me/) > -1){
 		onIrcServerMsg({
 			"type": "message",
-			"nick": "leo|high5",
+			"nick": client.nick,
 			"to": "#"+data.chan,
 			"text": convertToEntity(data.msg).replace("/me", "\u0001ACTION").replace(/$/, "\u0001")
 		});
@@ -87,7 +91,7 @@ function decideOnIrcClientMessageType(data){
 	} else {
 		onIrcServerMsg({
 			"type": "message",
-			"nick": "leo|high5",
+			"nick": client.nick,
 			"to": "#"+data.chan,
 			"text": convertToEntity(data.msg)
 		});
@@ -104,7 +108,7 @@ io.sockets.on("connection", function(){
 });
 
 function modChanlist(action, nick, channel){
-	if(nick == "leo|high5"){
+	if(nick == client.nick){
 		if(action == "motd"){
 		} if(action == "join"){
 			chanlist.push(channel);
@@ -120,7 +124,7 @@ function modChanlist(action, nick, channel){
 // userlist stuff
 
 function modUserlist(action, nick, channel){
-	/*if(nick != "leo|high5"){
+	/*if(nick != client.nick){
 		if(action == "join"){
 			chanlist.push(channel);
 		} if(action == "part" || action == "kick"){
@@ -135,7 +139,12 @@ function modUserlist(action, nick, channel){
 // stuff to do with messages from the irc server
 
 function onIrcServerMsg(data){
+	addMsgToRedis(data);
 	io.sockets.emit("ircServerMsg", data);
+}
+
+function addMsgToRedis(data){
+	
 }
 
 client.addListener("registered", function() {
@@ -144,6 +153,7 @@ client.addListener("registered", function() {
 	});
 });
 client.addListener("motd", function(motd) {
+	io.sockets.emit("ircNick", client.nick);
 	onIrcServerMsg({
 		"type": "motd",
 		"motd": convertToEntity(motd)

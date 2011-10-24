@@ -8,6 +8,10 @@ $(document).ready(function() {
 
 	irc = new Object();
 
+	socket.on("ircNick", function(data){
+			ircNick = data;
+		});
+
 	socket.on("ircServerMsg", function(data){
 		console.log(data);
 		if(data.type === "registered") irc.registered();
