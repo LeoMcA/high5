@@ -14,11 +14,11 @@ $(document).ready(function() {
 
 	socket.on("ircServerMsg", function(data){
 		if(data.to == "server"){
-			createPre("server.messages");
-			$("pre.server.messages").append(data.msg);
+			createPre("server.motd");
+			$("pre.server.motd").append(convertToEntity(data.msg));
 		} else {
-			createPre("server.channel."+data.to.replace("#", "")+".messages");
-			$("pre.server.channel."+data.to.replace("#", "")+".messages").append(data.msg);
+			createPre("server.channel."+data.to.replace("#", "_hash_")+".messages");
+			$("pre.server.channel."+data.to.replace("#", "_hash_")+".messages").append(convertToEntity(data.msg));
 		}
 	});
 
@@ -26,7 +26,7 @@ $(document).ready(function() {
 
 	$("form.send").submit(function(){
 		socket.emit("ircClientMsg", {
-			"chan": location.pathname.split("/")[1],
+			"to": unescape(location.pathname.split("/")[1]),
 			"msg": $("input:first").val()
 		});
 		$("input:first").val("")
@@ -56,11 +56,11 @@ $(document).ready(function() {
 		if(keypressed == "1"){
 			history.replaceState(false, false, "/");
 			$("pre.server").hide();
-			$("pre.server.messages").show();
+			$("pre.server.motd").show();
 		} else {
-			history.replaceState(false, false, chanlist[convertToChan(keypressed)].replace("#", ""));
+			history.replaceState(false, false, escape(chanlist[convertToChan(keypressed)]));
 			$("pre.server").hide();
-			$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "")+".messages").show();
+			$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "_hash_")+".messages").show();
 		}
 	}
 
@@ -70,9 +70,9 @@ $(document).ready(function() {
 
 	function createPre(classes){
 		if($("pre."+classes).length === 0){
-			$("body").append("<pre class='"+classes.replace(/\./g, " ")+"'>");
+			$("section.messages").append("<pre class='"+classes.replace(/\./g, " ")+"'>");
 			$("pre.server").hide();
-			$("pre.server.channel."+location.pathname.split("/")[1]+".messages").show();
+			$("pre.server.channel."+unescape(location.pathname.split("/")[1]).replace("#", "_hash_")+".messages").show();
 		}
 	}
 	
@@ -99,5 +99,9 @@ $(document).ready(function() {
 	}
 
 	jwerty.key('↑,↑,↓,↓,←,→,←,→,B,A,↩', function(){alert("yaaaaaaaaaaay!");});
+
+	function convertToEntity(str){
+		return str.replace(/\&/g, "&#38;").replace(/\"/g, "&#34;").replace(/\'/g, "&#39;").replace(/\</g, "&#60;").replace(/\>/g, "&#62;");
+	}
 
 });

@@ -46,6 +46,23 @@ var io = require("socket.io").listen(app);
 
 var redis = require('redis').createClient();
 
+io.sockets.on("connection", function(){
+	chanlist.forEach(function(channel){
+		if(channel == "server"){
+			
+		} else {
+			redis.lrange("server.channel."+channel+".messages", "0", "-1", function(err, data){
+				data.forEach(function(msg){
+					io.sockets.emit("ircServerMsg", {
+						"to": channel,
+						"msg": msg
+					});
+				});
+			});
+		}
+	});
+});
+
 // ---------- irc stuff ----------
 
 var irc = require("irc");
@@ -66,28 +83,24 @@ var client = new irc.Client("irc.mozilla.org", "leo|high5", {
 // stuff to do with messages to the irc server
 
 io.sockets.on("connection", function(socket){
-	socket.on("ircClientMsg", function(data){onIrcClientMsg(data)});
+	socket.on("ircClientMsg", function(data){
+		if(chanlist.indexOf(data.to) === -1 || data.to == ""){
+			return;
+		} else if(data.msg.search(/^\/me/) > -1){
+			client.emit("message", client.nick, data.to, data.msg.replace("/me", "\u0001ACTION").replace(/$/, "\u0001"));
+			client.say(data.to, data.msg.replace("/me", "\u0001ACTION").replace(/$/, "\u0001"));
+		} else if(data.msg.search(/^\/join/) > -1){
+			client.join(data.msg.replace("/join ", ""));
+		} else if(data.msg.search(/^\/part/) > -1){
+			client.part(data.msg.replace("/part ", ""));
+		} else if(data.msg.search(/^\/quit/) > -1){
+			client.disconnect(data.msg.replace("/quit ", ""));
+		} else {
+			client.emit("message", client.nick, data.to, data.msg);
+			client.say(data.to, data.msg);
+		}
+	});
 });
-
-function onIrcClientMsg(data){
-	decideOnIrcClientMessageType(data);
-}
-
-function decideOnIrcClientMessageType(data){
-	if(data.msg.search(/^\/me/) > -1){
-		client.emit("message", client.nick, "#"+data.chan, convertToEntity(data.msg.replace("/me", "\u0001ACTION").replace(/$/, "\u0001")));
-		client.say("#"+data.chan, data.msg.replace("/me", "\u0001ACTION").replace(/$/, "\u0001"));
-	} else if(data.msg.search(/^\/join/) > -1){
-		client.join(data.msg.replace("/join ", ""));
-	} else if(data.msg.search(/^\/part/) > -1){
-		client.part(data.msg.replace("/part ", ""));
-	} else if(data.msg.search(/^\/quit/) > -1){
-		client.disconnect(data.msg.replace("/quit ", ""));
-	} else {
-		client.emit("message", client.nick, "#"+data.chan, convertToEntity(data.msg));
-		client.say("#"+data.chan, data.msg);
-	}
-}
 
 // chanlist stuff
 
@@ -135,7 +148,7 @@ function onIrcServerMsg(data){
 
 function addMsgToRedis(data){
 	if(data.to == "server"){
-		redis.rpush("server.messages", data.msg);
+		redis.rpush("server.motd", data.msg);
 	} else if(Array.isArray(data.to)){
 		data.to.forEach(function(value){
 			redis.rpush("server.channel."+value+".messages", data.msg);
@@ -153,9 +166,9 @@ client.addListener("registered", function() {
 client.addListener("motd", function(motd) {
 	io.sockets.emit("ircNick", client.nick);
 	onIrcServerMsg({
-		"type": "message",
+		"type": "motd",
 		"to": "server",
-		"msg": convertToEntity(motd)
+		"msg": motd
 	});
 });
 client.addListener("names", function(channel, nicks) {
@@ -168,61 +181,53 @@ client.addListener("names", function(channel, nicks) {
 client.addListener("topic", function(channel, topic, nick) {
 	//modTopic(topic, channel, nick);
 	onIrcServerMsg({
-		"type": "message",
+		"type": "topic",
 		"to": channel,
-		"msg": nick+" changed the topic to \""+convertToEntity(topic)+"\"",
+		"msg": "<-> "+nick+" changed the topic to \""+topic+"\"\n",
 	});
 });
 client.addListener("join", function(channel, nick) {
 	modUserlist("join", nick, channel);
 	modChanlist("join", nick, channel);
 	onIrcServerMsg({
-		"type": "message",
 		"to": channel,
-		"msg": "--&#62; "+nick+" joined "+channel+"\n"
+		"msg": "--> "+nick+" joined "+channel+"\n"
 	});
 });
 client.addListener("part", function(channel, nick, reason) {
 	modUserlist("part", nick, channel);
 	modChanlist("part", nick, channel);
 	onIrcServerMsg({
-		"type": "message",
 		"to": channel,
-		"msg": "&#60;-- "+nick+" left "+channel+" ("+convertToEntity(reason)+")\n"
+		"msg": "<-- "+nick+" left "+channel+" ("+reason+")\n"
 	});
 });
 client.addListener("quit", function(nick, reason, channels) {
 	modUserlist("quit", nick);
 	modChanlist("quit", nick);
 	onIrcServerMsg({
-		"type": "message",
 		"to": channel,
-		"msg": "&#60;-- "+nick+" left irc ("+convertToEntity(reason)+")\n"
+		"msg": "<-- "+nick+" left irc ("+reason+")\n"
 	});
 });
 client.addListener("kick", function(channel, nick, by, reason) {
 	modUserlist("kick", nick, channel);
 	modChanlist("kick", nick, channel);
 	onIrcServerMsg({
-		"type": "message",
 		"to": channel,
-		"msg": "&#60;-- "+nick+" was kicked from "+channel+" by "+by+" ("+convertToEntity(reason)+")\n"
+		"msg": "<-- "+nick+" was kicked from "+channel+" by "+by+" ("+reason+")\n"
 	});
 });
 client.addListener("message", function(nick, to, text) {
 	if(text.search(/^\x01ACTION/) > -1){
 		onIrcServerMsg({
-			"type": "message",
-			"nick": nick,
 			"to": to,
-			"msg": "*"+nick+convertToEntity(text.replace("\x01ACTION", "").replace("\x01", ""))+"\n"
+			"msg": text.replace("\x01ACTION", "*"+nick).replace("\x01", "")+"\n"
 		});
 	} else {
 		onIrcServerMsg({
-			"type": "message",
-			"nick": nick,
 			"to": to,
-			"msg": "&#60;"+nick+"&#62; "+convertToEntity(text)+"\n"
+			"msg": "<"+nick+"> "+text+"\n"
 		});
 	}
 });
@@ -237,11 +242,9 @@ client.addListener("notice", function(nick, to, text) {
 client.addListener("nick", function(oldnick, newnick, channels) {
 	modUserlist("nick", newnick, channels, oldnick);
 	onIrcServerMsg({
-		"type": "message",
-		"oldnick": oldnick,
-		"newnick": newnick,
+		"type": "nick",
 		"to": channels,
-		"msg": "-- "+oldnick+" is now known as "+newnick+"\n"
+		"msg": oldnick+" is now known as "+newnick+"\n"
 	});
 });
 client.addListener("invite", function(channel, from) {
@@ -262,15 +265,11 @@ client.addListener("whois", function(info) {
 
 function findInArray(array, str){
 	position = array.forEach(function(value, index){
-		if(value === str){
+		if(value == str){
 			return index;
 		} else {
 			return false;
 		}
 	});
 	return position;
-}
-
-function convertToEntity(str){
-	return str.replace(/\&/g, "&#38;").replace(/\"/g, "&#34;").replace(/\'/g, "&#39;").replace(/\</g, "&#60;").replace(/\>/g, "&#62;");
 }
