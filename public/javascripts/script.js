@@ -62,17 +62,9 @@ $(document).ready(function() {
 				"</section>");
 			}
 			if(data.type == "pm"){
-				$(section).append("<pre>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='nick'>"+data.nick+"</span>"+
-					"<span class='msg'>"+data.msg+"</span>"+
-				"</pre>");
+				$(section).append(createMessageDOM(data.nick, data.msg, data.date))
 			} else if(data.type == "pm-action"){
-				$(section).append("<pre class='action'>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='nick'>"+data.nick+"</span>"+
-					"<span class='msg'>"+data.action+"</span>"+
-				"</pre>");
+				$(section).append(createMessageDOM(data.nick, data.action, data.date))
 			}
 		} else {
 			data.chan = data.chan.replace("#", "");
@@ -83,17 +75,9 @@ $(document).ready(function() {
 				"</section>");
 			}
 			if(data.type == "msg"){
-				$(section).append("<pre>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='nick'>"+data.nick+"</span>"+
-					"<span class='msg'>"+data.msg+"</span>"+
-				"</pre>");
+				$(section).append(createMessageDOM(data.nick, data.msg, data.date))
 			} else if(data.type == "action"){
-				$(section).append("<pre class='action'>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='nick'>"+data.nick+"</span>"+
-					"<span class='msg'>"+data.action+"</span>"+
-				"</pre>");
+				$(section).append(createMessageDOM(data.nick, data.action, data.date))
 			} else if(data.type == "join"){
 				$(section).append("<pre>"+
 					"<time>"+data.date.toLocaleTimeString()+"</time>"+
