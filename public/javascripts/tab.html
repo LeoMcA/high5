@@ -1,0 +1,13 @@
+<!doctype html>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+<input>
+<script>
+$('input').keydown(function(e) { 
+  var keyCode = e.keyCode || e.which; 
+
+  if (keyCode == 9) { 
+    e.preventDefault(); 
+    alert('tab pressed');
+  } 
+});
+</script>

@@ -1,0 +1,13 @@
+
+<button id="browserid">Login with browserid!</button>
+<script>
+$("#browserid").click(function(){
+	navigator.id.getVerifiedEmail(function(assertion) {
+    	if (assertion) {
+     	   $("input").val(assertion);
+     	} else {
+     		window.location("/")
+     	}
+	});
+});
+</script>

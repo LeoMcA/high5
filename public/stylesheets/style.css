@@ -1,12 +1,97 @@
+@import "html5reset-1.6.1.css";
+@import "reveal.css";
+
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+	font-size: 1em;
+	font-family: monospace;
+	padding-bottom: 1.5em;
+	line-height: 1.5em;
 }
 
-a {
-  color: #00B7FF;
+aside.bufferlist {
+	float: left;
+}
+
+aside.userlist {
+	float: right;
+}
+
+li {
+	list-style: none;
+	padding: 0 0.5em;
+}
+
+li span.pings {
+	float: right;
+}
+
+li.op:before {
+	content: "@";
+}
+
+li.hop:before {
+	content: "%";
+}
+
+li.voice:before {
+	content: "+";
 }
 
 pre {
-	white-space: pre-wrap; 
+	white-space: pre-wrap;
+	display: table-row;
+}
+
+pre.topic {
+	display: block;
+}
+
+pre span, pre time {
+	display: table-cell;
+}
+
+pre span.nick {
+	text-align: right;
+}
+
+pre span.nick:before {
+	content: " <";
+}
+
+pre span.nick:after {
+	content: "> ";
+}
+
+pre.action span.nick {
+	text-align: right;
+}
+
+pre.action span.nick:before {
+	content: " ";
+}
+
+pre.action span.nick:after {
+	content: " ";
+}
+
+pre.action {
+	font-style: italic;
+}
+
+form {
+	width: 100%;
+	position: fixed;
+	bottom: 0;
+	background: #fff;
+}
+
+form input {
+	width: 100%;
+	font-family: monospace;
+	font-size: 1em;
+	-moz-box-sizing: border-box;
+}
+
+@media all and (orientation: portrait) {
+	aside.userlist { float: left; clear: left; }
 }

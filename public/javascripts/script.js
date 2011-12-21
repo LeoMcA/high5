@@ -1,107 +1,192 @@
+var socket = io.connect("http://localhost:3000/");
+
+Array.prototype.diff = function(a) {
+    return this.filter(function(i) {return !(a.indexOf(i) > -1);});
+};
+
+var ifDuplicateDeleteBoth = function(a, b){
+	$.each(a, function(index, value){
+		var result = $.inArray(value, b);
+		if(result > -1){
+			a.splice(index, 1);
+			b.splice(result, 1);
+			return;
+		}
+	});
+}
+
+var createMessageDOM = function (nickname, message, date) {
+    var nick = $("<span class='nick'></span>").text(nickname),
+        msg = $("<span class='msg'></span>").text(message),
+        time = $("<time></time>").text(date.toLocaleTimeString());
+    
+    return = $("<pre></pre>").append(time).append(nick).append(msg);
+};
+
 $(document).ready(function() {
-
-	// ---------- socket.io stuff ----------
-
-	var socket = io.connect("http://localhost:3000/");
-
-	// ---------- messages from irc bouncer ----------
-
-	irc = new Object();
-
-	socket.on("ircNick", function(data){
-			ircNick = data;
-		});
-
-	socket.on("ircServerMsg", function(data){
-		if(data.to == "server"){
-			createPre("server.motd");
-			$("pre.server.motd").append(convertToEntity(data.msg));
-		} else {
-			createPre("server.channel."+data.to.replace("#", "_hash_")+".messages");
-			$("pre.server.channel."+data.to.replace("#", "_hash_")+".messages").append(convertToEntity(data.msg));
+	socket.on("connection", function(data){
+		if(!data.ircConnected){
+			$("#connect-modal").reveal();
 		}
 	});
 
-	// ---------- messages to irc bouncer ----------
-
-	$("form.send").submit(function(){
-		socket.emit("ircClientMsg", {
-			"to": unescape(location.pathname.split("/")[1]),
-			"msg": $("input:first").val()
+	$("#connect-modal button").click(function(){
+		socket.emit("connect", {
+			"nick": $("#nick").val(),
+			"server": $("#server").val(),
+			"port": $("#port").val()
 		});
-		$("input:first").val("")
+	});
+
+	socket.on("irc", function(data){
+		data.server = "server";
+		data.date = new Date(data.date);
+		console.log(data);
+		if(data.serverMsg){
+		   if($("section.server.server_"+data.server).length === 0){
+				$("body").append("<section class='server server_"+data.server+"'></section>");
+			}
+		} else if(data.type == "quit"){
+			data.channels.forEach(function(chan){
+				chan = chan.replace("#", "")
+				$("section.chan.server_"+data.server+".chan_"+chan).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='event quit'></span>"+
+					"<span class='msg'>"+data.nick+" quit irc ("+data.reason+")</span>"+
+				"</pre>");
+			});
+		} else if(data.type == "pm" || data.type == "pm-action"){
+			var section = "section.pm.server_"+data.server+".pm_"+data.pm;
+			if($(section).length === 0){
+				$("body").append("<section class='pm server_"+data.server+" pm_"+data.pm+"'>"+
+				"</section>");
+			}
+			if(data.type == "pm"){
+				$(section).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='nick'>"+data.nick+"</span>"+
+					"<span class='msg'>"+data.msg+"</span>"+
+				"</pre>");
+			} else if(data.type == "pm-action"){
+				$(section).append("<pre class='action'>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='nick'>"+data.nick+"</span>"+
+					"<span class='msg'>"+data.action+"</span>"+
+				"</pre>");
+			}
+		} else {
+			data.chan = data.chan.replace("#", "");
+			var section = "section.chan.server_"+data.server+".chan_"+data.chan;
+			if($(section).length === 0){
+				$("body").append("<section class='chan server_"+data.server+" chan_"+data.chan+"'>"+
+					"<pre class='topic'></pre>"+
+				"</section>");
+			}
+			if(data.type == "msg"){
+				$(section).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='nick'>"+data.nick+"</span>"+
+					"<span class='msg'>"+data.msg+"</span>"+
+				"</pre>");
+			} else if(data.type == "action"){
+				$(section).append("<pre class='action'>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='nick'>"+data.nick+"</span>"+
+					"<span class='msg'>"+data.action+"</span>"+
+				"</pre>");
+			} else if(data.type == "join"){
+				$(section).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='event join'></span>"+
+					"<span class='msg'>"+data.nick+" joined "+data.chan+"</span>"+
+				"</pre>");
+			} else if(data.type == "part"){
+				$(section).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='event part'></span>"+
+					"<span class='msg'>"+data.nick+" left "+data.chan+" ("+data.reason+")</span>"+
+				"</pre>");
+			} else if(data.type == "kick"){
+				$(section).append("<pre>"+
+					"<time>"+data.date.toLocaleTimeString()+"</time>"+
+					"<span class='event kick'></span>"+
+					"<span class='msg'>"+data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")</span>"+
+				"</pre>");
+			}
+		}
+	});
+
+	function detectCmd(callback){
+		var input = $("input:first").val();
+		var channel = "#high5";
+		if(input.search(/^\/topic/i) > -1){
+			callback({
+				"type": "topic",
+				"chan": channel,
+				//"nick": nick,
+				"topic": input.replace("/topic ", "")
+			});
+		} else if(input.search(/^\/join/i) > -1){
+			callback({
+				"type": "join",
+				"chan": input.replace("/join ", ""),
+				//"nick": nick
+			});
+		} else if(input.search(/^\/part/i) > -1){
+			callback({
+				"type": "part",
+				"chan": channel,
+				//"nick": nick,
+				"reason": input.replace("/part ", "")
+			});
+		} else if(input.search(/^\/quit/i) > -1){
+			callback({
+				"type": "quit",
+				"chans": channels,
+				//"nick": nick,
+				"reason": input.replace("/quit ", "")
+			});
+		} else if(input.search(/^\/kick/i) > -1){
+			callback({
+				"type": "kick",
+				"chan": channel,
+				"nick": input.replace("/kick ", ""),
+				//"by": by,
+				"reason": ""
+			});
+		} else if(input.search(/^\/me/i) > -1){
+			callback({
+				"type": "action",
+				"chan": channel,
+				//"nick": nick,
+				"action": input.replace("/me ", "")
+			});
+		} else {
+			callback({
+				"type": "msg",
+				"chan": channel,
+				//"nick": nick,
+				"msg": input
+			});
+		}
+	}
+
+	$("form").submit(function(){
+		detectCmd(function(data){
+			socket.emit("irc", data);
+			$("input:first").val("")
+		});
 		return false;
 	});
 
-	// ---------- chanlist stuff ----------
+	buffers = {};
+	buffers.list = [];
 
-	chanlist = [];
-
-	socket.on("chanlist", function(chanlistFromServer){
-		chanlist = chanlistFromServer;
-		$("pre.chanlist").replaceWith("<pre class='chanlist'></pre>");
-		$.each(chanlist, function(index, value){
-			$("pre.chanlist").append(convertToBind(index)+" | "+value+"<br>");
+	socket.on("buffers", function(buffersFromServer){
+		buffers.list = buffersFromServer.diff(buffers.list);
+		$("aside.buffer-list ul").empty();
+		$.each(buffers.list, function(index, value){
+			$("aside.buffer-list ul").append("<li><span class='name'>"+value+"</span><span class='pings'></span></li>");
 		});
 	});
-
-	// changing the channel
-
-	jwerty.key("Alt+1/Alt+2/Alt+3/Alt+4/Alt+5/Alt+6/Alt+7/Alt+8/Alt+9/Alt+0/Alt+q/Alt+w/Alt+e/Alt+r/Alt+t/Alt+y/Alt+u/Alt+i/Alt+o/Alt+p/Alt+a/Alt+s/Alt+d/Alt+f/Alt+g/Alt+h/Alt+j/Alt+k/Alt+l/Alt+z/Alt+x/Alt+c/Alt+v/Alt+b/Alt+n/Alt+m", function(foo, keypressed){
-		changeChan(keypressed.replace("alt+", ""));
-		return false;
-	});
-	
-	function changeChan(keypressed){
-		if(keypressed == "1"){
-			history.replaceState(false, false, "/");
-			$("pre.server").hide();
-			$("pre.server.motd").show();
-		} else {
-			history.replaceState(false, false, escape(chanlist[convertToChan(keypressed)]));
-			$("pre.server").hide();
-			$("pre.server.channel."+chanlist[convertToChan(keypressed)].replace("#", "_hash_")+".messages").show();
-		}
-	}
-
-	// ---------- assorted code ----------
-
-	qwerty = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m"];
-
-	function createPre(classes){
-		if($("pre."+classes).length === 0){
-			$("section.messages").append("<pre class='"+classes.replace(/\./g, " ")+"'>");
-			$("pre.server").hide();
-			$("pre.server.channel."+unescape(location.pathname.split("/")[1]).replace("#", "_hash_")+".messages").show();
-		}
-	}
-	
-	function convertToBind(index){
-		if(index < 9){
-			return index+1;
-		} else if(index === 9){
-			return 0;
-		} else if(index < 37){
-			return qwerty[index-10];
-		} else {
-			return index+1;
-		}
-	}
-	
-	function convertToChan(keypressed){
-		if(keypressed == "0"){
-			return 9;
-		} else if(keypressed < 10){
-			return keypressed-1;
-		} else {
-			return $.inArray(keypressed, qwerty)+10;
-		}
-	}
-
-	jwerty.key('↑,↑,↓,↓,←,→,←,→,B,A,↩', function(){alert("yaaaaaaaaaaay!");});
-
-	function convertToEntity(str){
-		return str.replace(/\&/g, "&#38;").replace(/\"/g, "&#34;").replace(/\'/g, "&#39;").replace(/\</g, "&#60;").replace(/\>/g, "&#62;");
-	}
-
 });

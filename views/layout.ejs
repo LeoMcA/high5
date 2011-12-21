@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>high5</title>
+		<link rel="stylesheet" href="/stylesheets/style.css">
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="/javascripts/jquery.reveal.js"></script>
+		<script src="/javascripts/script.js"></script>
+		<!--<script src="https://browserid.org/include.js" type="text/javascript"></script>-->
+	</head>
+	<body>
+		<header>
+		</header>
+		<aside class="bufferlist">
+			<ul>
+				<li><span class="name">moznet</span><span class="pings">1</span></li>
+				<li><span class="name">#lizardlounge</span><span class="pings"></span></li>
+				<li><span class="name">#uk</span><span class="pings">1</span></li>
+				<li><span class="name">#webdev</span><span class="pings"></span></li>
+				<li><span class="name">#foxymonkies</span><span class="pings"></span></li>
+			</ul>
+			<ul>
+				<li><span class="name">freenode</span><span class="pings">10</span></li>
+				<li><span class="name">#firefox</span><span class="pings"></span></li>
+				<li><span class="name">#mozilla</span><span class="pings">5</span></li>
+				<li><span class="name">#blah</span><span class="pings"></span></li>
+				<li><span class="name">#foo</span><span class="pings">5</span></li>
+			</ul>
+		</aside>
+		<aside class="userlist">
+			<ul>
+				<li class="op">leo</li>
+				<li class="op">Jan</li>
+				<li class="op">Tanner</li>
+				<li class="hop">Tobbi</li>
+				<li class="voice">jX</li>
+				<li>Lucy</li>
+			</ul>
+		</aside>
+		<section>
+			<pre class="topic">Leo's awesome channel || AWESOME SAUCE!!!!! || LOOOOOO OOOOO OOOOOOOOOOO OOOOOOOOOOO OOOOOOO OOOOOONG || let's make this topic even longer! :D</pre>
+			<pre><time>12:27</time><span class="nick">gavin</span><span class="message">I would like my timeline to include every song I've ever listened to, in chronological order</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">I would like it to list everyone I have defriended</span></pre>
+			<pre><time>12:27</time><span class="nick">philikon</span><span class="message">"dwitte's h8 list"</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">nemesii</span></pre>
+			<pre><time>12:27</time><span class="nick">gavin</span><span class="message">(actually, maybe leave out the early 90s)</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">but</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">what is love</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">baby don't hurt me</span></pre>
+			<pre><time>12:27</time><span class="nick">sdwilsh</span><span class="message">don't hurt me</span></pre>
+			<pre><time>12:27</time><span class="nick">biesi</span><span class="message">no more</span></pre>
+			<pre><time>12:27</time><span class="nick">dwitte</span><span class="message">do do do do doo do do do do doo do do do do dee dee dee dee deeee dee</span></pre>
+			<pre><time>12:27</time><span class="nick">gavin</span><span class="message">dun dun dun dun dun dun dun dun dun dun dun dun dun dun dun dun</span></pre>
+		</section>
+		<form>
+			<input type="text">
+		</form>
+
+		<div id="connect-modal" class="reveal-modal">
+			<h1>Connect</h1>
+			Nick: <input id="nick"><br>
+			Server: <input id="server"> Port: <input id="port">
+			<button class="close-reveal-modal">Connect</button>
+		</div>
+
+	</body>
+</html>
