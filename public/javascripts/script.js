@@ -27,11 +27,11 @@ var createMessageDOM = function (nickname, message, date) {
     return = $("<pre></pre>").append(time).append(nick).append(msg);
 };
 
-var createJoinDOM = function (nick, channel, date) {
-	var event = $("<span clas='event join'></span>"),
-	    message = $("<span class='msg'></span>").text(nick + " joined " + channel);
-
-	return $("<pre></pre>").append(time).append(crateTimeDOM(date)).append(message);
+var createEventDOM = function (event, interaction, date) {
+	var event = $("<span></span>").addClass('event').addClass(event),
+	    message = $("<span></span>".addClass('msg').text(interaction);
+	    
+	return $("<pre></pre>").append(createTimeDOM(date)).append(event).append(message);
 };
 
 $(document).ready(function() {
@@ -60,11 +60,8 @@ $(document).ready(function() {
 		} else if(data.type == "quit"){
 			data.channels.forEach(function(chan){
 				chan = chan.replace("#", "")
-				$("section.chan.server_"+data.server+".chan_"+chan).append("<pre>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='event quit'></span>"+
-					"<span class='msg'>"+data.nick+" quit irc ("+data.reason+")</span>"+
-				"</pre>");
+				$("section.chan.server_"+data.server+".chan_"+chan)
+				    .append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
 			});
 		} else if(data.type == "pm" || data.type == "pm-action"){
 			var section = "section.pm.server_"+data.server+".pm_"+data.pm;
@@ -90,19 +87,11 @@ $(document).ready(function() {
 			} else if(data.type == "action"){
 				$(section).append(createMessageDOM(data.nick, data.action, data.date))
 			} else if(data.type == "join"){
-				$(section).append(createJoinDOM(data.nick, data.chan, data.date));
+				$(section).append(createEventDOM("join", data.nick+" joined "+data.chan, data.date));
 			} else if(data.type == "part"){
-				$(section).append("<pre>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='event part'></span>"+
-					"<span class='msg'>"+data.nick+" left "+data.chan+" ("+data.reason+")</span>"+
-				"</pre>");
+				$(section).append(createEventDOM("part", data.nick+" left "+data.chan+" ("+data.reason+")", data.date));
 			} else if(data.type == "kick"){
-				$(section).append("<pre>"+
-					"<time>"+data.date.toLocaleTimeString()+"</time>"+
-					"<span class='event kick'></span>"+
-					"<span class='msg'>"+data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")</span>"+
-				"</pre>");
+				$(section).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date)); 
 			}
 		}
 	});
