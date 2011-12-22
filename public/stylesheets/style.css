@@ -38,7 +38,7 @@ li.voice:before {
 }
 
 pre {
-	white-space: pre-wrap;
+	white-space: pre;
 	display: table-row;
 }
 
@@ -48,6 +48,7 @@ pre.topic {
 
 pre span, pre time {
 	display: table-cell;
+	overflow: hidden;
 }
 
 pre span.nick {
@@ -76,6 +77,10 @@ pre.action span.nick:after {
 
 pre.action {
 	font-style: italic;
+}
+
+pre span.msg, pre.topic {
+	white-space: pre-wrap;
 }
 
 form {
