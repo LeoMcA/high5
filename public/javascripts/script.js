@@ -16,7 +16,7 @@ var ifDuplicateDeleteBoth = function(a, b){
 }
 
 var createTimeDOM = function (date) {
-	return $("<time></time>").text(date.toLoaleTimeString());
+	return $("<time></time>").text(date.toLocaleTimeString());
 };
 
 var createMessageDOM = function (nickname, message, date) {
@@ -24,12 +24,12 @@ var createMessageDOM = function (nickname, message, date) {
         msg = $("<span class='msg'></span>").text(message),
         time = createTimeDOM(date);
     
-    return = $("<pre></pre>").append(time).append(nick).append(msg);
+    return $("<pre></pre>").append(time).append(nick).append(msg);
 };
 
 var createEventDOM = function (event, interaction, date) {
 	var event = $("<span></span>").addClass('event').addClass(event),
-	    message = $("<span></span>".addClass('msg').text(interaction);
+	    message = $("<span></span>").addClass('msg').text(interaction);
 	    
 	return $("<pre></pre>").append(createTimeDOM(date)).append(event).append(message);
 };
