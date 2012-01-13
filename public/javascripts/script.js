@@ -1,20 +1,5 @@
 var socket = io.connect("http://localhost:3000/");
 
-Array.prototype.diff = function(a) {
-    return this.filter(function(i) {return !(a.indexOf(i) > -1);});
-};
-
-var ifDuplicateDeleteBoth = function(a, b){
-	$.each(a, function(index, value){
-		var result = $.inArray(value, b);
-		if(result > -1){
-			a.splice(index, 1);
-			b.splice(result, 1);
-			return;
-		}
-	});
-}
-
 var createTimeDOM = function (date) {
 	return $("<time></time>").text(date.toLocaleTimeString());
 };
@@ -79,6 +64,7 @@ $(document).ready(function() {
 			var section = "section.chan.server_"+data.server+".chan_"+data.chan;
 			if($(section).length === 0){
 				$("body").append("<section class='chan server_"+data.server+" chan_"+data.chan+"'>"+
+                    "<aside class='userlist'><ul></ul></aside>"+
 					"<pre class='topic'></pre>"+
 				"</section>");
 			}
@@ -92,7 +78,14 @@ $(document).ready(function() {
 				$(section).append(createEventDOM("part", data.nick+" left "+data.chan+" ("+data.reason+")", data.date));
 			} else if(data.type == "kick"){
 				$(section).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date)); 
-			}
+			} else if(data.type == "names"){
+                $(section+" aside.userlist ul").replaceWith("<ul></ul>")
+                $.each(data.nicks, function() {
+                    $.each(this, function(nick) {
+                        $(section+" aside.userlist ul").append("<li>"+nick+"</li>");
+                    });
+                });
+            }
 		}
 	});
 
@@ -157,16 +150,5 @@ $(document).ready(function() {
 			$("input:first").val("")
 		});
 		return false;
-	});
-
-	buffers = {};
-	buffers.list = [];
-
-	socket.on("buffers", function(buffersFromServer){
-		buffers.list = buffersFromServer.diff(buffers.list);
-		$("aside.buffer-list ul").empty();
-		$.each(buffers.list, function(index, value){
-			$("aside.buffer-list ul").append("<li><span class='name'>"+value+"</span><span class='pings'></span></li>");
-		});
 	});
 });
