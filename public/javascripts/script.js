@@ -30,7 +30,8 @@ $(document).ready(function() {
 		socket.emit("connect", {
 			"nick": $("#nick").val(),
 			"server": $("#server").val(),
-			"port": $("#port").val()
+			"port": $("#port").val(),
+			"channels": $("#channels").val()
 		});
 	});
 
@@ -108,7 +109,7 @@ $(document).ready(function() {
 		} else if(input.search(/^\/part/i) > -1){
 			callback({
 				"type": "part",
-				"chan": channel,
+				"chan": input.replace("/part ", ""),
 				//"nick": nick,
 				"reason": input.replace("/part ", "")
 			});
@@ -150,5 +151,15 @@ $(document).ready(function() {
 			$("input:first").val("")
 		});
 		return false;
+	});
+
+	socket.on("ircChans", function(data){
+		$(".bufferlist").empty();
+		$(".bufferlist").append("<ul></ul>");
+
+		data.forEach(function(value){
+			var li = $("<li></li>").text(value);
+			$(".bufferlist ul").append(li);
+		});
 	});
 });

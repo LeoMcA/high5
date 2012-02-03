@@ -1,5 +1,4 @@
-var express = require("express@2.4.7");
-var curl = require("./lib/curl");
+var express = require("express");
 var app = module.exports = express.createServer();
 
 app.configure(function() {
@@ -25,23 +24,8 @@ app.configure("production", function() {
 });
 
 app.get("/", function(req, res) {
-	res.render("index", { user: req.session.email });
+	res.render("index");
 });
-
-
-/*app.get("/:channel", function(req, res) {
-	res.render("index", {
-		title: "Express"
-	});
-});*/
-
-app.get("/login", function(req, res){
-	if(!req.session.email){
-		res.render("login", { user: req.session.email });
-	} else {
-		res.redirect("/");
-	}
-})
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
@@ -53,6 +37,13 @@ var client = {};
 var ircConnected = false;
 
 io.sockets.on("connection", function(socket){
+	var clientOn = function(data, chans){
+		socket.emit("irc", data);
+		if(data.type == "join" || data.type == "part" || data.type == "kick"){
+			socket.emit("ircChans", client.getChans());
+		}
+	}
+	
 	socket.emit("connection", {
 		"ircConnected": ircConnected
 	});
@@ -64,18 +55,14 @@ io.sockets.on("connection", function(socket){
 				"server": data.server,
 				"port": data.port,
 				"nick": data.nick,
-				"channels": ["#high5", "#lizardlounge"]
+				"channels": data.channels.split(/ +|,+/g)
 			});
-			client.on(function(data){
-				socket.emit("irc", data);
-			});
+			client.on(clientOn);
 		}
     })
 
     if(ircConnected){
-	    client.on(function(data){
-			socket.emit("irc", data);
-		});
+	    client.on(clientOn);
 	}
 
 	socket.on("irc", function(data){
