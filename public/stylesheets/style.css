@@ -1,102 +1,26 @@
-@import "html5reset-1.6.1.css";
-@import "reveal.css";
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
 
 body {
-	font-size: 1em;
-	font-family: monospace;
-	padding-bottom: 1.5em;
-	line-height: 1.5em;
+    padding-top: 60px;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
 
-aside.bufferlist {
-	float: left;
+.navbar .nav {
+    float: right;
 }
 
-aside.userlist {
-	float: right;
+.input input {
+    width: 100%;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    height: 28px;
+    margin-top: 20px;
 }
 
-li {
-	list-style: none;
-	padding: 0 0.5em;
-}
-
-li span.pings {
-	float: right;
-}
-
-li.op:before {
-	content: "@";
-}
-
-li.hop:before {
-	content: "%";
-}
-
-li.voice:before {
-	content: "+";
-}
-
-pre {
-	white-space: pre;
-	display: table-row;
-}
-
-pre.topic {
-	display: block;
-}
-
-pre span, pre time {
-	display: table-cell;
-	overflow: hidden;
-}
-
-pre span.nick {
-	text-align: right;
-}
-
-pre span.nick:before {
-	content: " <";
-}
-
-pre span.nick:after {
-	content: "> ";
-}
-
-pre.action span.nick {
-	text-align: right;
-}
-
-pre.action span.nick:before {
-	content: " ";
-}
-
-pre.action span.nick:after {
-	content: " ";
-}
-
-pre.action {
-	font-style: italic;
-}
-
-pre span.msg, pre.topic {
-	white-space: pre-wrap;
-}
-
-form {
-	width: 100%;
-	position: fixed;
-	bottom: 0;
-	background: #fff;
-}
-
-form input {
-	width: 100%;
-	font-family: monospace;
-	font-size: 1em;
-	-moz-box-sizing: border-box;
-}
-
-@media all and (orientation: portrait) {
-	aside.userlist { float: left; clear: left; }
+.buffer-list, .buffer, .user-list {
+    overflow: scroll;
 }

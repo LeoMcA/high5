@@ -6,6 +6,7 @@
 			"express": ">= 2.4.7",
 			"socket.io": ">= 0.8.4",
 			"irc": ">= 0.2.1",
-            "ejs": ">= 0.6"
+            "ejs": ">= 0.6",
+            "passport-browserid": ">= 0.1.0"
 	}
 }
