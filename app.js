@@ -66,6 +66,11 @@ io.sockets.on("connection", function(socket){
 	}
 
 	socket.on("irc", function(data){
-		client.send(data);
+		client.send(data, function(){
+			ircConnected = false;
+			socket.emit("connection", {
+				"ircConnected": ircConnected
+			});
+		});
 	});
 });

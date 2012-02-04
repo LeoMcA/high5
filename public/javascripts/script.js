@@ -44,7 +44,7 @@ $(document).ready(function() {
 				$("body").append("<section class='server server_"+data.server+"'></section>");
 			}
 		} else if(data.type == "quit"){
-			data.channels.forEach(function(chan){
+			data.chans.forEach(function(chan){
 				chan = chan.replace("#", "")
 				$("section.chan.server_"+data.server+".chan_"+chan)
 				    .append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
@@ -90,66 +90,14 @@ $(document).ready(function() {
 		}
 	});
 
-	function detectCmd(callback){
+	$("form").submit(function(){
 		var input = $("input:first").val();
 		var channel = "#high5";
-		if(input.search(/^\/topic/i) > -1){
-			callback({
-				"type": "topic",
-				"chan": channel,
-				//"nick": nick,
-				"topic": input.replace("/topic ", "")
-			});
-		} else if(input.search(/^\/join/i) > -1){
-			callback({
-				"type": "join",
-				"chan": input.replace("/join ", ""),
-				//"nick": nick
-			});
-		} else if(input.search(/^\/part/i) > -1){
-			callback({
-				"type": "part",
-				"chan": input.replace("/part ", ""),
-				//"nick": nick,
-				"reason": input.replace("/part ", "")
-			});
-		} else if(input.search(/^\/quit/i) > -1){
-			callback({
-				"type": "quit",
-				"chans": channels,
-				//"nick": nick,
-				"reason": input.replace("/quit ", "")
-			});
-		} else if(input.search(/^\/kick/i) > -1){
-			callback({
-				"type": "kick",
-				"chan": channel,
-				"nick": input.replace("/kick ", ""),
-				//"by": by,
-				"reason": ""
-			});
-		} else if(input.search(/^\/me/i) > -1){
-			callback({
-				"type": "action",
-				"chan": channel,
-				//"nick": nick,
-				"action": input.replace("/me ", "")
-			});
-		} else {
-			callback({
-				"type": "msg",
-				"chan": channel,
-				//"nick": nick,
-				"msg": input
-			});
-		}
-	}
-
-	$("form").submit(function(){
-		detectCmd(function(data){
-			socket.emit("irc", data);
-			$("input:first").val("")
+		socket.emit("irc", {
+			"activeChan": channel,
+			"input": input
 		});
+		$("input:first").val("");
 		return false;
 	});
 
