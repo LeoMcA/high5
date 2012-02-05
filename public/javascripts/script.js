@@ -1,40 +1,50 @@
 var socket = io.connect("http://localhost:3000/");
 
 var createMessageDOM = function (nickname, message, date) {
-    var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
-    var nick = $("<td></td>").text(nickname);
-    var msg = $("<td></td>").text(message);
-    
-    return $("<tr></tr>").append(time).append(nick).append(msg);
+	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
+	var nick = $("<td></td>").text(nickname);
+	var msg = $("<td></td>").text(message);
+	
+	return $("<tr></tr>").append(time).append(nick).append(msg);
 };
 
 var createEventDOM = function (event, interaction, date) {
 	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
-	var event = $("<td></td>").text(event);
+	var type = $("<td></td>").text(event);
 	var msg = $("<td></td>").text(interaction);
-	    
-	return $("<tr></tr>").append("<span></span>").addClass('label').append(time).append(event).append(msg);
+	var tr = $("<tr></tr>");
+
+	if(event == "join"){
+		tr.addClass("label-success");
+	} else if(event == "part" || event == "quit" || event == "kick"){
+		tr.addClass("label-important");
+	} else if(event == "topic"){
+		tr.addClass("label-info");
+	} else if (event == "mode"){
+		tr.addClass("label-warning");
+	}
+	return tr.addClass("label").append(time).append(type).append(msg);
 };
 
 var createBuffer = function(id, name){
 	$(".tab-content").append("<div class='tab-pane' id='"+id+"'>"+
-	                            "<div class='row-fluid'>"+
-	                                "<div class='span10'>"+
-	                                    "<div class='alert alert-info topic'>"+
-	                                    "</div>"+
-	                                    "<div class='buffer'>"+
-	                                        "<table>"+
-	                                            "<tbody>"+
-	                                            "</tbody>"+
-	                                        "</table>"+
-	                                    "</div>"+
-	                                "</div>"+
-	                                "<div class='span2 user-list'>"+
-	                                    "<ul class='nav nav-list'>"+
-	                                    "</ul>"+
-	                                "</div>"+
-	                            "</div>"+
-	                        "</div>");
+								"<div class='row-fluid'>"+
+									"<div class='span10'>"+
+										"<div class='alert alert-info topic'>"+
+										"</div>"+
+										"<div class='buffer'>"+
+											"<table>"+
+												"<tbody>"+
+												"</tbody>"+
+											"</table>"+
+										"</div>"+
+									"</div>"+
+									"<div class='span2 user-list'>"+
+										"<ul class='nav nav-list'>"+
+										"</ul>"+
+									"</div>"+
+								"</div>"+
+							"</div>");
 	$(".buffer-list ul").append("<li><a href='#"+id+"' data-toggle='tab'>"+name+"</a></li>");
 	dynamicStuff();
 }
@@ -58,15 +68,25 @@ $(document).ready(function() {
 	socket.on("irc", function(data){
 		data.date = new Date(data.date);
 		console.log(data);
-		/*if(data.serverMsg){
-		   if($("section.server.server_"+data.server).length === 0){
-				$("body").append("<section class='server server_"+data.server+"'></section>");
+		if(data.type == "motd"){
+			var buffer = "#server tbody";
+			if($(buffer).length === 0){
+				createBuffer("server", "Server");
+				$("#server").addClass("active");
 			}
-		} else*/ if(data.type == "quit"){
+			$(buffer).append(createMessageDOM("server", data.motd, data.date));
+		} else if(data.type == "notice"){
+			var buffer = "#server tbody";
+			if($(buffer).length === 0){
+				createBuffer("server", "Server");
+				$("#server").addClass("active");
+			}
+			$(buffer).append(createMessageDOM("server", data.notice, data.date));
+		} else if(data.type == "quit"){
 			data.chans.forEach(function(chan){
 				chan = chan.replace("#", "")
 				$("#chan_"+chan)
-				    .append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
+					.append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
 			});
 		} else if(data.type == "pm" || data.type == "pm-action"){
 			var buffer = "#pm_"+data.pm+" tbody";
@@ -74,40 +94,68 @@ $(document).ready(function() {
 				createBuffer("pm_"+data.pm, data.pm);
 			}
 			if(data.type == "pm"){
-				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date))
+				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date));
 			} else if(data.type == "pm-action"){
-				$(buffer).append(createMessageDOM(data.nick, data.action, data.date))
+				$(buffer).append(createMessageDOM(data.nick, data.action, data.date));
 			}
 		} else {
-			data.chan = data.chan.replace("#", "");
-			var buffer = "#chan_"+data.chan+" tbody";
+			data.chanNoHash = data.chan.replace("#", "");
+			var buffer = "#chan_"+data.chanNoHash+" tbody";
 			if($(buffer).length === 0){
-				createBuffer("chan_"+data.chan, data.chan);
+				createBuffer("chan_"+data.chanNoHash, data.chan);
 			}
 			if(data.type == "msg"){
-				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date))
+				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date));
 			} else if(data.type == "action"){
-				$(buffer).append(createMessageDOM(data.nick, data.action, data.date))
+				$(buffer).append(createMessageDOM(data.nick, data.action, data.date));
 			} else if(data.type == "join"){
 				$(buffer).append(createEventDOM("join", data.nick+" joined "+data.chan, data.date));
 			} else if(data.type == "part"){
 				$(buffer).append(createEventDOM("part", data.nick+" left "+data.chan+" ("+data.reason+")", data.date));
 			} else if(data.type == "kick"){
 				$(buffer).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date)); 
-			} /*else if(data.type == "names"){
-                $(section+" aside.userlist ul").replaceWith("<ul></ul>")
-                $.each(data.nicks, function() {
-                    $.each(this, function(nick) {
-                        $(section+" aside.userlist ul").append("<li>"+nick+"</li>");
-                    });
-                });
-            } */
+			} else if(data.type == "topic"){
+				$("#chan_"+data.chanNoHash+" .topic").text(data.topic);
+				dynamicStuff();
+				$(buffer).append(createEventDOM("topic", data.nick+" changed the topic to \""+data.topic+"\"", data.date));
+			} else if(data.type == "names"){
+				$("#chan_"+data.chanNoHash+" .user-list ul").empty();
+				if(data.nicks.ops.length > 0){
+					$("#chan_"+data.chanNoHash+" .user-list ul").append("<li class='nav-header'><a href='#'>Ops</a></li>");
+					data.nicks.ops.forEach(function(val){
+						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
+					});
+				}
+				if(data.nicks.hops.length > 0){
+					$("#chan_"+data.chanNoHash+" .user-list ul").append("<li class='nav-header'><a href='#'>Half-ops</a></li>");
+					data.nicks.hops.forEach(function(val){
+						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
+					});
+				}
+				if(data.nicks.voices.length > 0){
+					$("#chan_"+data.chanNoHash+" .user-list ul").append("<li class='nav-header'><a href='#'>Voice</a></li>");
+					data.nicks.voices.forEach(function(val){
+						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
+					});
+				}
+				if(data.nicks.users.length > 0){
+					$("#chan_"+data.chanNoHash+" .user-list ul").append("<li class='nav-header'><a href='#'>Users</a></li>");
+					data.nicks.users.forEach(function(val){
+						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
+					});
+				}
+			} else if(data.type="+mode"){
+				$(buffer).append(createEventDOM("mode", data.chan+" [+"+data.mode+" "+data.arg+"] by "+data.by, data.date));
+			} else if(data.type="-mode"){
+				$(buffer).append(createEventDOM("mode", data.chan+" [-"+data.mode+" "+data.arg+"] by "+data.by, data.date));
+			}
 		}
 	});
 
 	$("form").submit(function(){
 		var input = $("input:first").val();
-		var channel = "#high5";
+		var channel = $(".buffer-list .active a").text();
+		if(channel == "") return false;
 		socket.emit("irc", {
 			"activeChan": channel,
 			"input": input

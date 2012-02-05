@@ -2,10 +2,12 @@ var heightStuff = function(){
     var sidebarHeight = $("body").height() - $(".input").outerHeight(true);
     $(".buffer-list").css("height", sidebarHeight+"px");
     $(".user-list").css("height", sidebarHeight+"px");
-    $(".buffer").css("height", sidebarHeight - $(".topic").outerHeight(true));
+    $(".tab-content").each(function(index){
+       $(".buffer").eq(index).css("height", sidebarHeight - $(".topic").eq(index).outerHeight(true));
+    });
 }
 
-var dynamicStuff = function(){
+dynamicStuff = function(){
     heightStuff();
 }
 
