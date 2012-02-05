@@ -44,19 +44,43 @@ var createBuffer = function(id, name){
 										"</ul>"+
 									"</div>"+
 								"</div>"+
+								"<div class='row-fluid'>"+
+					                "<div class='span12 input'>"+
+					                    "<form class='form-horizontal'>"+
+					                        "<input type='text' autofocus='true' data-provide='typeahead'>"+
+					                    "</form>"+
+					                "</div>"+
+					            "</div>"+
 							"</div>");
 	$(".buffer-list ul").append("<li><a href='#"+id+"' data-toggle='tab'>"+name+"</a></li>");
-	dynamicStuff();
+	correctDisplay();
+	$(".input form").each(function(index){
+		if(!$(this).hasClass("falsed")){
+			$(this).submit(function(){
+				var input = $(".active .input input").val();
+				var channel = $(".buffer-list .active a").text();
+				if(channel == "") return false;
+				socket.emit("irc", {
+					"activeChan": channel,
+					"input": input
+				});
+				$(".active .input input").val("");
+				$(this).addClass("falsed");
+				return false;
+			});
+		}
+	});
 }
 
 $(document).ready(function() {
+
 	socket.on("connection", function(data){
 		if(!data.ircConnected){
-			$("#connect-modal").reveal();
+			$(".modal").modal();
 		}
 	});
 
-	$("#connect-modal button").click(function(){
+	$(".modal").on("hidden", function(){
 		socket.emit("connect", {
 			"nick": $("#nick").val(),
 			"server": $("#server").val(),
@@ -116,7 +140,7 @@ $(document).ready(function() {
 				$(buffer).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date)); 
 			} else if(data.type == "topic"){
 				$("#chan_"+data.chanNoHash+" .topic").text(data.topic);
-				dynamicStuff();
+				correctDisplay();
 				$(buffer).append(createEventDOM("topic", data.nick+" changed the topic to \""+data.topic+"\"", data.date));
 			} else if(data.type == "names"){
 				$("#chan_"+data.chanNoHash+" .user-list ul").empty();
@@ -144,23 +168,19 @@ $(document).ready(function() {
 						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
 					});
 				}
+				$("#chan_"+data.chanNoHash+" .input input").typeahead({
+					source: data.nicks.all
+				});
 			} else if(data.type="+mode"){
 				$(buffer).append(createEventDOM("mode", data.chan+" [+"+data.mode+" "+data.arg+"] by "+data.by, data.date));
 			} else if(data.type="-mode"){
 				$(buffer).append(createEventDOM("mode", data.chan+" [-"+data.mode+" "+data.arg+"] by "+data.by, data.date));
 			}
 		}
+		correctDisplay();
 	});
 
-	$("form").submit(function(){
-		var input = $("input:first").val();
-		var channel = $(".buffer-list .active a").text();
-		if(channel == "") return false;
-		socket.emit("irc", {
-			"activeChan": channel,
-			"input": input
-		});
-		$("input:first").val("");
+	$(".modal-body form").submit(function(){
 		return false;
 	});
 

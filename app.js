@@ -41,7 +41,7 @@ io.sockets.on("connection", function(socket){
 		socket.emit("irc", data);
 		if(data.type == "join" || data.type == "part" || data.type == "kick" || data.type == "quit" || data.type == "+mode" || data.type == "-mode"){
 			socket.emit("ircChans", client.getChans());
-			client.sendNames();
+			client.sendNames(data);
 		}
 	}
 	

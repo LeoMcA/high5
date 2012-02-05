@@ -1,16 +1,17 @@
-var heightStuff = function(){
-    var sidebarHeight = $("body").height() - $(".input").outerHeight(true);
-    $(".buffer-list").css("height", sidebarHeight+"px");
+correctDisplay = function(){
+    var sidebarHeight = $("body").height() - 66;
+    $(".buffer-list").css("height", $("body").height()+"px");
     $(".user-list").css("height", sidebarHeight+"px");
-    $(".tab-content").each(function(index){
+    $(".buffer-list ul li").each(function(index){
        $(".buffer").eq(index).css("height", sidebarHeight - $(".topic").eq(index).outerHeight(true));
+       $(".buffer").eq(index).prop("scrollTop", $(".buffer").eq(index).prop("scrollHeight") - $('.buffer').eq(index).height() + 8);
     });
 }
 
-dynamicStuff = function(){
-    heightStuff();
-}
+$(window).resize(function() {
+    correctDisplay();
+});
 
 $(document).ready(function() {
-    heightStuff();
+    correctDisplay();
 });

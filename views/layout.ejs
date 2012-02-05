@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>high5</title>
-		<link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <head>
+        <title>high5</title>
+        <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
         <link rel="stylesheet" href="/stylesheets/bootstrap-responsive.min.css">
-		<link rel="stylesheet" href="/stylesheets/reveal.css">
-		<link rel="stylesheet" href="/stylesheets/style.css">
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="/javascripts/bootstrap.min.js"></script>
-		<script src="/javascripts/jquery.reveal.js"></script>
-		<script src="/javascripts/display.js"></script>
-		<script src="/javascripts/script.js"></script>
-		<!--<script src="https://browserid.org/include.js" type="text/javascript"></script>-->
-	</head>
-	<body>
-		<div class="navbar navbar-fixed-top">
+        <link rel="stylesheet" href="/stylesheets/reveal.css">
+        <link rel="stylesheet" href="/stylesheets/style.css">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/javascripts/bootstrap-modified.js"></script>
+        <script src="/javascripts/jquery.reveal.js"></script>
+        <script src="/javascripts/display.js"></script>
+        <script src="/javascripts/script.js"></script>
+        <!--<script src="https://browserid.org/include.js" type="text/javascript"></script>-->
+    </head>
+    <body>
+        <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
                 <div class="container">
                     <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -32,7 +32,7 @@
                 </div>
             </div>
         </div>
-		<div class="container-fluid">
+        <div class="container-fluid">
             <div class="row-fluid">
                 <div class="span2 buffer-list">
                     <ul class="nav nav-list">
@@ -43,23 +43,24 @@
                     </div>
                 </div>
             </div>
-            <div class="row-fluid">
-                <div class="span12 input">
-                    <form class="form-horizontal">
-                        <input type="text" autofocus="true">
-                    </form>
-                </div>
+        </div>
+
+        <div class="modal fade">
+            <div class="modal-header">
+                <h3>Connect</h3>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <label>Nick: <input id="nick"></label>
+                    <label>Server: <input id="server"></label>
+                    <label>Port: <input id="port"></label>
+                    <label>Channels <input id="channels"></label>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" data-dismiss="modal">Connect</a>
             </div>
         </div>
 
-		<div id="connect-modal" class="reveal-modal">
-			<h1>Connect</h1>
-			<label>Nick: <input id="nick"></label>
-			<label>Server: <input id="server"></label>
-			<label>Port: <input id="port"></label>
-			<label>Channels <input id="channels"></label>
-			<button class="close-reveal-modal">Connect</button>
-		</div>
-
-	</body>
+    </body>
 </html>
