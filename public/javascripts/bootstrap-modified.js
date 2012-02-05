@@ -1473,6 +1473,7 @@
   "use strict"
 
   var Typeahead = function ( element, options ) {
+    this.element = element
     this.$element = $(element)
     this.options = $.extend({}, $.fn.typeahead.defaults, options)
     this.matcher = this.options.matcher || this.matcher
@@ -1496,7 +1497,7 @@
 
   , show: function () {
       var pos = $.extend({}, this.$element.offset(), {
-        height: this.$element[0].clientHeight
+        height: this.$menu.outerHeight()
       })
 
       this.$menu.css({

@@ -47,7 +47,7 @@ var createBuffer = function(id, name){
 								"<div class='row-fluid'>"+
 					                "<div class='span12 input'>"+
 					                    "<form class='form-horizontal'>"+
-					                        "<input type='text' autofocus='true' data-provide='typeahead'>"+
+					                        "<input type='text' data-provide='typeahead'>"+
 					                    "</form>"+
 					                "</div>"+
 					            "</div>"+
@@ -168,6 +168,8 @@ $(document).ready(function() {
 						$("#chan_"+data.chanNoHash+" .user-list ul").append("<li><a href='#'>"+val+"</a></li>");
 					});
 				}
+				$("#chan_"+data.chanNoHash+" .input form").empty();
+				$("#chan_"+data.chanNoHash+" .input form").append("<input type='text' data-provide='typeahead'>");
 				$("#chan_"+data.chanNoHash+" .input input").typeahead({
 					source: data.nicks.all
 				});
