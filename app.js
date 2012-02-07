@@ -43,6 +43,9 @@ io.sockets.on("connection", function(socket){
 			socket.emit("ircChans", client.getChans());
 			client.sendNames(data);
 		}
+		if(data.type == "nick"){
+			client.setNick(data);
+		}
 	}
 	
 	socket.emit("connection", {

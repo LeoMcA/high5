@@ -56,6 +56,8 @@ var createBuffer = function(id, name){
 	correctDisplay();
 	$(".input form").each(function(index){
 		if(!$(this).hasClass("falsed")){
+			$(this).addClass("falsed");
+			console.log("Added class 'falsed'");
 			$(this).submit(function(){
 				var input = $(".active .input input").val();
 				var channel = $(".buffer-list .active a").text();
@@ -65,7 +67,6 @@ var createBuffer = function(id, name){
 					"input": input
 				});
 				$(".active .input input").val("");
-				$(this).addClass("falsed");
 				return false;
 			});
 		}
@@ -111,6 +112,12 @@ $(document).ready(function() {
 				chan = chan.replace("#", "")
 				$("#chan_"+chan)
 					.append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
+			});
+		} else if(data.type == "nick"){
+			data.chans.forEach(function(chan){
+				chan = chan.replace("#", "")
+				$("#chan_"+chan)
+					.append(createEventDOM("nick", data.oldnick+" is now known as "+data.newnick, data.date));
 			});
 		} else if(data.type == "pm" || data.type == "pm-action"){
 			var buffer = "#pm_"+data.pm+" tbody";
