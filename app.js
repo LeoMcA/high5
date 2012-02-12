@@ -39,7 +39,7 @@ var ircConnected = false;
 io.sockets.on("connection", function(socket){
 	var clientOn = function(data, chans){
 		socket.emit("irc", data);
-		if(data.type == "join" || data.type == "part" || data.type == "kick" || data.type == "quit" || data.type == "+mode" || data.type == "-mode"){
+		if(data.type == "join" || data.type == "part" || data.type == "kick" || data.type == "quit" || data.type == "+mode" || data.type == "-mode" || data.type == "nick"){
 			socket.emit("ircChans", client.getChans());
 			client.sendNames(data);
 		}

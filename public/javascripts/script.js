@@ -10,18 +10,19 @@ var createMessageDOM = function (nickname, message, date) {
 
 var createEventDOM = function (event, interaction, date) {
 	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
-	var type = $("<td></td>").text(event);
+	var type = $("<td></td>");
 	var msg = $("<td></td>").text(interaction);
 	var tr = $("<tr></tr>");
 
 	if(event == "join"){
 		tr.addClass("label-success");
+		type.text("→");
 	} else if(event == "part" || event == "quit" || event == "kick"){
 		tr.addClass("label-important");
-	} else if(event == "topic"){
+		type.text("←");
+	} else {
 		tr.addClass("label-info");
-	} else if (event == "mode"){
-		tr.addClass("label-warning");
+		type.text("―");
 	}
 	return tr.addClass("label").append(time).append(type).append(msg);
 };
@@ -108,16 +109,14 @@ $(document).ready(function() {
 			}
 			$(buffer).append(createMessageDOM("server", data.notice, data.date));
 		} else if(data.type == "quit"){
-			data.chans.forEach(function(chan){
-				chan = chan.replace("#", "")
-				$("#chan_"+chan)
-					.append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
+			$.each(data.chans, function(index, chan){
+				chan = chan.replace("#", "");
+				$("#chan_"+chan+" tbody").append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
 			});
 		} else if(data.type == "nick"){
-			data.chans.forEach(function(chan){
-				chan = chan.replace("#", "")
-				$("#chan_"+chan)
-					.append(createEventDOM("nick", data.oldnick+" is now known as "+data.newnick, data.date));
+			$.each(data.chans, function(index, chan){
+				chan = chan.replace("#", "");
+				$("#chan_"+chan+" tbody").append(createEventDOM("nick", data.oldnick+" is now known as "+data.newnick, data.date));
 			});
 		} else if(data.type == "pm" || data.type == "pm-action"){
 			var buffer = "#pm_"+data.pm+" tbody";
