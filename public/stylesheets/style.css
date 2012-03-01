@@ -24,3 +24,52 @@ body {
 .buffer-list, .buffer, .user-list {
     overflow: scroll;
 }
+
+table {
+    width: 100%;
+}
+
+.event {
+    background: #3A87AD;
+    color: #fff;
+}
+
+.event.join {
+    background: #468847;
+}
+
+.event.leave {
+    background: #B94A48;
+}
+
+.action {
+    font-style: italic;
+}
+
+td:nth-child(2):after {
+    content: "|";
+    padding-left: 5px;
+    visibility: hidden;
+}
+
+td:nth-child(1) {
+    opacity: 0.5;
+    font-style: normal;
+}
+
+td:nth-child(2) {
+    padding-right: 5px;
+    text-align: right;
+}
+
+.msg td:nth-child(2):after {
+    visibility: visible;
+}
+
+td.ping {
+    background: #F89406;
+}
+
+a.ping {
+    color: #B94A48;
+}

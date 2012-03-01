@@ -1397,6 +1397,7 @@
           .removeClass('active')
           .find('> .dropdown-menu > .active')
           .removeClass('active')
+          .removeClass('ping')
 
         element.addClass('active')
 

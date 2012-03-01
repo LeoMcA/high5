@@ -1,60 +1,100 @@
 var socket = io.connect("http://localhost:3000/");
 
-var createMessageDOM = function (nickname, message, date) {
+var createMessageDOM = function (nickname, message, date, ping, buffer) {
 	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
 	var nick = $("<td></td>").text(nickname);
 	var msg = $("<td></td>").text(message);
+	var tr = $("<tr></tr>");
+
+	if(ping){
+		tr.addClass("ping");
+		pingActions(buffer);
+	}
 	
-	return $("<tr></tr>").append(time).append(nick).append(msg);
+	return tr.addClass("msg").append(time).append(nick).append(msg);
 };
 
-var createEventDOM = function (event, interaction, date) {
+var createActionDOM = function (nickname, message, date, ping, buffer) {
+	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
+	var star = $("<td></td>").text("*");
+	var action = $("<td></td>").text(nickname+" "+message);
+	var tr = $("<tr></tr>");
+
+	if(ping){
+		tr.addClass("ping");
+		pingActions(buffer);
+	}
+	
+	return tr.addClass("action").append(time).append(star).append(action);
+};
+
+var createEventDOM = function (event, interaction, date, ping) {
 	var time = $("<td></td>").append("<time></time>").text(date.toLocaleTimeString());
 	var type = $("<td></td>");
 	var msg = $("<td></td>").text(interaction);
 	var tr = $("<tr></tr>");
 
 	if(event == "join"){
-		tr.addClass("label-success");
+		tr.addClass("join");
 		type.text("→");
 	} else if(event == "part" || event == "quit" || event == "kick"){
-		tr.addClass("label-important");
+		tr.addClass("leave");
 		type.text("←");
 	} else {
-		tr.addClass("label-info");
 		type.text("―");
 	}
-	return tr.addClass("label").append(time).append(type).append(msg);
+	return tr.addClass("event").append(time).append(type).append(msg);
 };
 
 var createBuffer = function(id, name){
-	$(".tab-content").append("<div class='tab-pane' id='"+id+"'>"+
-								"<div class='row-fluid'>"+
-									"<div class='span10'>"+
-										"<div class='alert alert-info topic'>"+
+	if(name.search(/^#/) > -1){
+		$(".tab-content").append("<div class='tab-pane' id='"+id+"'>"+
+									"<div class='row-fluid'>"+
+										"<div class='span10'>"+
+											"<div class='buffer'>"+
+												"<div class='alert alert-info topic'>"+
+												"</div>"+
+												"<table>"+
+													"<tbody>"+
+													"</tbody>"+
+												"</table>"+
+											"</div>"+
 										"</div>"+
-										"<div class='buffer'>"+
-											"<table>"+
-												"<tbody>"+
-												"</tbody>"+
-											"</table>"+
+										"<div class='span2 user-list'>"+
+											"<ul class='nav nav-list'>"+
+											"</ul>"+
 										"</div>"+
 									"</div>"+
-									"<div class='span2 user-list'>"+
-										"<ul class='nav nav-list'>"+
-										"</ul>"+
+									"<div class='row-fluid'>"+
+						                "<div class='span12 input'>"+
+						                    "<form class='form-horizontal'>"+
+						                        "<input type='text' data-provide='typeahead'>"+
+						                    "</form>"+
+						                "</div>"+
+						            "</div>"+
+								"</div>");
+	} else {
+		$(".tab-content").append("<div class='tab-pane' id='"+id+"'>"+
+									"<div class='row-fluid'>"+
+										"<div class='span12'>"+
+											"<div class='buffer'>"+
+												"<table>"+
+													"<tbody>"+
+													"</tbody>"+
+												"</table>"+
+											"</div>"+
+										"</div>"+
 									"</div>"+
-								"</div>"+
-								"<div class='row-fluid'>"+
-					                "<div class='span12 input'>"+
-					                    "<form class='form-horizontal'>"+
-					                        "<input type='text' data-provide='typeahead'>"+
-					                    "</form>"+
-					                "</div>"+
-					            "</div>"+
-							"</div>");
+									"<div class='row-fluid'>"+
+						                "<div class='span12 input'>"+
+						                    "<form class='form-horizontal'>"+
+						                        "<input type='text' data-provide='typeahead'>"+
+						                    "</form>"+
+						                "</div>"+
+						            "</div>"+
+								"</div>");
+	}
 	$(".buffer-list ul").append("<li><a href='#"+id+"' data-toggle='tab'>"+name+"</a></li>");
-	correctDisplay();
 	$(".input form").each(function(index){
 		if(!$(this).hasClass("falsed")){
 			$(this).addClass("falsed");
@@ -72,6 +112,14 @@ var createBuffer = function(id, name){
 			});
 		}
 	});
+}
+
+var pingActions = function(pingBuff) {
+	$(".buffer-list ul li a").each(function(){
+        if($(this).text() == pingBuff) {
+        	$(this).addClass("ping");
+        }
+    });
 }
 
 $(document).ready(function() {
@@ -107,11 +155,11 @@ $(document).ready(function() {
 				createBuffer("server", "Server");
 				$("#server").addClass("active");
 			}
-			$(buffer).append(createMessageDOM("server", data.notice, data.date));
+			$(buffer).append(createMessageDOM("server", data.notice, data.date, data.ping));
 		} else if(data.type == "quit"){
 			$.each(data.chans, function(index, chan){
 				chan = chan.replace("#", "");
-				$("#chan_"+chan+" tbody").append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date));
+				$("#chan_"+chan+" tbody").append(createEventDOM("quit", data.nick + " quit irc (" + data.reason + ")", data.date, data.ping));
 			});
 		} else if(data.type == "nick"){
 			$.each(data.chans, function(index, chan){
@@ -120,34 +168,33 @@ $(document).ready(function() {
 			});
 		} else if(data.type == "pm" || data.type == "pm-action"){
 			var buffer = "#pm_"+data.pm+" tbody";
-			if($(buffer).length === 0){
+			if($(buffer).length == 0){
 				createBuffer("pm_"+data.pm, data.pm);
 			}
 			if(data.type == "pm"){
-				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date));
+				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date, data.ping, data.pm));
 			} else if(data.type == "pm-action"){
-				$(buffer).append(createMessageDOM(data.nick, data.action, data.date));
+				$(buffer).append(createActionDOM(data.nick, data.action, data.date, data.ping, data.pm));
 			}
 		} else {
 			data.chanNoHash = data.chan.replace("#", "");
 			var buffer = "#chan_"+data.chanNoHash+" tbody";
-			if($(buffer).length === 0){
+			if($(buffer).length == 0){
 				createBuffer("chan_"+data.chanNoHash, data.chan);
 			}
 			if(data.type == "msg"){
-				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date));
+				$(buffer).append(createMessageDOM(data.nick, data.msg, data.date, data.ping, data.chan));
 			} else if(data.type == "action"){
-				$(buffer).append(createMessageDOM(data.nick, data.action, data.date));
+				$(buffer).append(createActionDOM(data.nick, data.action, data.date, data.ping, data.chan));
 			} else if(data.type == "join"){
 				$(buffer).append(createEventDOM("join", data.nick+" joined "+data.chan, data.date));
 			} else if(data.type == "part"){
-				$(buffer).append(createEventDOM("part", data.nick+" left "+data.chan+" ("+data.reason+")", data.date));
+				$(buffer).append(createEventDOM("part", data.nick+" left "+data.chan+" ("+data.reason+")", data.date, data.ping));
 			} else if(data.type == "kick"){
-				$(buffer).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date)); 
+				$(buffer).append(createEventDOM("kick", data.nick+" was kicked from "+data.chan+" by "+data.by+" ("+data.reason+")", data.date, data.ping)); 
 			} else if(data.type == "topic"){
 				$("#chan_"+data.chanNoHash+" .topic").text(data.topic);
-				correctDisplay();
-				$(buffer).append(createEventDOM("topic", data.nick+" changed the topic to \""+data.topic+"\"", data.date));
+				$(buffer).append(createEventDOM("topic", data.nick+" changed the topic to \""+data.topic+"\"", data.date, data.ping));
 			} else if(data.type == "names"){
 				$("#chan_"+data.chanNoHash+" .user-list ul").empty();
 				if(data.nicks.ops.length > 0){
